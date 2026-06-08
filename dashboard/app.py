@@ -17,7 +17,8 @@ def load_and_analyse(unit=1):
                's1','s2','s3','s4','s5','s6','s7','s8','s9','s10',
                's11','s12','s13','s14','s15','s16','s17','s18','s19','s20','s21']
 
-    df = pd.read_csv('../data/train_FD001.txt', sep=r'\s+', header=None,
+   BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'train_FD001.txt'), sep=r'\s+', header=None,
                      names=columns, engine='python')
 
     df = df[df['unit'] == unit].copy()
