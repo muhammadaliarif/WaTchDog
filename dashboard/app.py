@@ -1,14 +1,14 @@
 from flask import Flask, render_template
 import sys
 import os
+import pandas as pd
+import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
 from core.validator import validate
 from core.health import calculate_health, get_status, get_first_warning
-import pandas as pd
-import json
 
 app = Flask(__name__)
 
@@ -17,9 +17,9 @@ def load_and_analyse(unit=1):
                's1','s2','s3','s4','s5','s6','s7','s8','s9','s10',
                's11','s12','s13','s14','s15','s16','s17','s18','s19','s20','s21']
 
-   BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'train_FD001.txt'), sep=r'\s+', header=None,
-                     names=columns, engine='python')
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'train_FD001.txt'),
+                     sep=r'\s+', header=None, names=columns, engine='python')
 
     df = df[df['unit'] == unit].copy()
     df = df.rename(columns={'s2': 'temperature_C', 's11': 'vibration_mm_s'})
@@ -35,7 +35,6 @@ df = pd.read_csv(os.path.join(BASE_DIR, 'data', 'train_FD001.txt'), sep=r'\s+', 
     warning_cycle = get_first_warning(df)
     total_cycles = int(df['cycle'].max())
 
-    # Build chart data
     cycles = df['cycle'].tolist()
     health_scores = df['health_rolling'].fillna(0).tolist()
     vibration = df['vibration_mm_s'].tolist()
