@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WaTchDoG — Predictive Maintenance</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0f1117;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: #1a1d27;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2d3a;
+        }
+
+        .navbar h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .navbar h1 span { color: #00cc66; }
+
+        .navbar .version {
+            font-size: 12px;
+            color: #666;
+            background: #2a2d3a;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .machine-badge {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .status-banner {
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-banner.CRITICAL {
+            background: linear-gradient(135deg, #2d1515, #3d1a1a);
+            border: 1px solid #ff4444;
+        }
+
+        .status-banner.WARNING {
+            background: linear-gradient(135deg, #2d2415, #3d2e1a);
+            border: 1px solid #ffaa00;
+        }
+
+        .status-banner.NORMAL {
+            background: linear-gradient(135deg, #152d1e, #1a3d2a);
+            border: 1px solid #00cc66;
+        }
+
+        .status-left { display: flex; align-items: center; gap: 20px; }
+
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .CRITICAL .status-dot { background: #ff4444; box-shadow: 0 0 12px #ff4444; }
+        .WARNING .status-dot { background: #ffaa00; box-shadow: 0 0 12px #ffaa00; }
+        .NORMAL .status-dot { background: #00cc66; box-shadow: 0 0 12px #00cc66; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .status-label {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .CRITICAL .status-label { color: #ff4444; }
+        .WARNING .status-label { color: #ffaa00; }
+        .NORMAL .status-label { color: #00cc66; }
+
+        .status-message { font-size: 14px; color: #aaa; margin-top: 4px; }
+
+        .status-score { text-align: right; }
+
+        .score-number {
+            font-size: 52px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .CRITICAL .score-number { color: #ff4444; }
+        .WARNING .score-number { color: #ffaa00; }
+        .NORMAL .score-number { color: #00cc66; }
+
+        .score-label { font-size: 12px; color: #666; margin-top: 4px; }
+
+        .progress-bar-container {
+            background: #1a1d27;
+            border-radius: 8px;
+            height: 12px;
+            margin-bottom: 28px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-bar.CRITICAL { background: linear-gradient(90deg, #ff6666, #ff0000); }
+        .progress-bar.WARNING { background: linear-gradient(90deg, #ffcc44, #ff8800); }
+        .progress-bar.NORMAL { background: linear-gradient(90deg, #44ffaa, #00cc66); }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: #1a1d27;
+            border: 1px solid #2a2d3a;
+            border-radius: 12px;
+            padding: 20px 24px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #00cc66;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .chart-card {
+            background: #1a1d27;
+            border: 1px solid #2a2d3a;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .alert-log {
+            background: #1a1d27;
+            border: 1px solid #2a2d3a;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .alert-log h3 {
+            font-size: 14px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #0f1117;
+            border: 1px solid #2a2d3a;
+        }
+
+        .alert-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .alert-dot.CRITICAL { background: #ff4444; }
+        .alert-dot.WARNING { background: #ffaa00; }
+        .alert-dot.NORMAL { background: #00cc66; }
+
+        .alert-text { font-size: 14px; color: #ccc; }
+        .alert-time { font-size: 12px; color: #555; margin-left: auto; }
+
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: #444;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <h1>WaTch<span>DoG</span></h1>
+    <span class="machine-badge">{{ data.machine_name }}</span>
+    <span class="version">v{{ data.version }}</span>
+</nav>
+
+<div class="container">
+
+    <div class="status-banner {{ data.status }}">
+        <div class="status-left">
+            <div class="status-dot"></div>
+            <div>
+                <div class="status-label">{{ data.status }}</div>
+                <div class="status-message">{{ data.message }}</div>
+            </div>
+        </div>
+        <div class="status-score">
+            <div class="score-number">{{ data.score }}</div>
+            <div class="score-label">HEALTH SCORE / 100</div>
+        </div>
+    </div>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar {{ data.status }}" style="width: {{ data.score }}%"></div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-value">{{ data.total_cycles }}</div>
+            <div class="stat-label">Total Cycles Run</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">
+                {% if data.warning_cycle %}{{ data.warning_cycle }}{% else %}—{% endif %}
+            </div>
+            <div class="stat-label">Warning Triggered at Cycle</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">
+                {% if data.lead_time %}{{ data.lead_time }}{% else %}—{% endif %}
+            </div>
+            <div class="stat-label">Cycles of Lead Time</div>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-title">Health Score Over Time</div>
+        <canvas id="healthChart" height="100"></canvas>
+    </div>
+
+    <div class="alert-log">
+        <h3>Alert Log</h3>
+
+        {% if data.status == "CRITICAL" %}
+        <div class="alert-item">
+            <div class="alert-dot CRITICAL"></div>
+            <div class="alert-text">CRITICAL — {{ data.machine_name }} health score reached {{ data.score }}/100 at cycle {{ data.total_cycles }}</div>
+            <div class="alert-time">Latest</div>
+        </div>
+        {% endif %}
+
+        {% if data.warning_cycle %}
+        <div class="alert-item">
+            <div class="alert-dot WARNING"></div>
+            <div class="alert-text">WARNING — {{ data.machine_name }} crossed warning threshold at cycle {{ data.warning_cycle }}</div>
+            <div class="alert-time">Cycle {{ data.warning_cycle }}</div>
+        </div>
+        {% endif %}
+
+        <div class="alert-item">
+            <div class="alert-dot NORMAL"></div>
+            <div class="alert-text">NORMAL — {{ data.machine_name }} baseline established from first 20 cycles</div>
+            <div class="alert-time">Cycle 1</div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    WaTchDoG v{{ data.version }} — Predictive Maintenance System — Auto-generated report
+</footer>
+
+<script>
+    const cycles = {{ data.cycles | safe }};
+    const healthScores = {{ data.health_scores | safe }};
+    const warningThreshold = {{ data.warning_threshold }};
+    const criticalThreshold = {{ data.critical_threshold }};
+
+    const ctx = document.getElementById('healthChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: cycles,
+            datasets: [
+                {
+                    label: 'Health Score',
+                    data: healthScores,
+                    borderColor: '#00cc66',
+                    backgroundColor: 'rgba(0, 204, 102, 0.05)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Warning (60)',
+                    data: Array(cycles.length).fill(warningThreshold),
+                    borderColor: '#ffaa00',
+                    borderWidth: 1,
+                    borderDash: [6, 4],
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'Critical (85)',
+                    data: Array(cycles.length).fill(criticalThreshold),
+                    borderColor: '#ff4444',
+                    borderWidth: 1,
+                    borderDash: [6, 4],
+                    pointRadius: 0,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#aaa', font: { size: 12 } }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#555', maxTicksLimit: 10 },
+                    grid: { color: '#1f2230' }
+                },
+                y: {
+                    min: 0,
+                    max: 105,
+                    ticks: { color: '#555' },
+                    grid: { color: '#1f2230' }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
